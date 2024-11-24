@@ -11,119 +11,101 @@
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include <stdlib.h>
-#include <unistd.h>
 
-void	ft_free(char **s1, char **s2)
+static char    *read_and_append_buffer(int fd, char *remainder, char *buffer);
+static char    *extract_and_save_remainder(char *line);
+static char    *ft_strchr(char *s, int c);
+
+char    *get_next_line(int fd)
 {
-	if (s1)
-	{
-		free(*s1);
-		*s1 = NULL;
-	}
-	if (s2)
-	{
-		free(*s2);
-		*s2 = NULL;
-	}
+    static char *remainder;
+    char        *line;
+    char        *buffer;
+
+
+    buffer = malloc(BUFFER_SIZE + 1);
+    if (fd < 0 || BUFFER_SIZE <= 0 || read(fd, 0, 0) < 0)
+    {
+        free(remainder);
+        free(buffer);
+        remainder = NULL;
+        buffer = NULL;
+        return (NULL);
+    }
+    if (!buffer)
+        return (NULL);
+    line = read_and_append_buffer(fd, remainder, buffer);
+    free(buffer);
+    buffer = NULL;
+    if (!line)
+        return (NULL);
+    remainder = extract_and_save_remainder(line);
+    return (line);
 }
 
-char	*ft_next(char *str, char **new_line)
+static char *extract_and_save_remainder(char *line_buffer)
 {
-	char	*next;
-	int		index;
-	int		i;
-
-	i = 0;
-	index = 0;
-	index = ft_strchr(str, '\n');
-	if (index == -1)
-		return (NULL);
-	if (str[index + 1] == 0)
-	{
-		ft_free(&str, NULL);
-		return (NULL);
-	}
-	index++;
-	next = ft_calloc(ft_strlen(str + index) + 1, 1);
-	if (!next)
-	{
-		ft_free(&str, new_line);
-		return (NULL);
-	}
-	while (str[index])
-		next[i++] = str[index++];
-	ft_free(&str, NULL);
-	return (next);
+    char    *remainder;
+    ssize_t    i;
+    
+    i = 0;
+    while (line_buffer[i] != '\n' && line_buffer[i] != '\0')
+        i++;
+    if (line_buffer[i] == 0 || line_buffer[1] == 0)
+        return (NULL);
+    remainder = ft_substr(line_buffer, i + 1, ft_strlen(line_buffer) - i);
+    if (*remainder == 0)
+    {
+        free(remainder);
+        remainder = NULL;
+    } 
+    line_buffer[i + 1] = 0;
+    return (remainder);
 }
 
-char	*ft_new_line(char *str)
+static char	*read_and_append_buffer(int fd, char *remainder, char *buffer)
 {
-	char	*new_line;
-	int		index;
+	ssize_t	b_read;
+	char	*tmp;
 
-	if (!str || !*str)
-		return (NULL);
-	index = ft_strchr(str, '\n');
-	if (index == -1)
-		return (str);
-	else
+	b_read = 1;
+	while (b_read > 0)
 	{
-		index++;
-		new_line = ft_calloc(index + 1, 1);
-		if (!new_line)
-			return (NULL);
-	}
-	while (index--)
-		new_line[index] = str[index];
-	return (new_line);
-}
-
-void	ft_readalloc(int fd, char **next)
-{
-	char	*buff;
-	ssize_t	r;
-
-	r = 1;
-	buff = ft_calloc(BUFFER_SIZE + 1, 1);
-	if (!buff)
-	{
-		ft_free(next, NULL);
-		return ;
-	}
-	while (ft_strchr(buff, '\n') == -1 && r != 0)
-	{
-		r = read(fd, buff, BUFFER_SIZE);
-		if (r == -1)
+		b_read = read(fd, buffer, BUFFER_SIZE);
+		if (b_read == -1)
 		{
-			ft_free(next, NULL);
-			break ;
+			free(remainder);
+			return (NULL);
 		}
-		buff[r] = '\0';
-		*next = ft_strjoin(*next, buff);
-		if (!*next)
+		else if (b_read == 0)
+			break ;
+		buffer[b_read] = 0;
+		if (!remainder)
+			remainder = ft_strdup("");
+		tmp = remainder;
+		remainder = ft_strjoin(tmp, buffer);
+		free(tmp);
+		tmp = NULL;
+		if (ft_strchr(buffer, '\n'))
 			break ;
 	}
-	ft_free(&buff, NULL);
+	return (remainder);
 }
 
-char	*get_next_line(int fd)
+static char	*ft_strchr(char *s, int c)
 {
-	char		*new_line;
-	static char	*next;
+	unsigned int	i;
+	char			cc;
 
-	new_line = NULL;
-	if (fd < 0 || BUFFER_SIZE <= 0)
-		return (NULL);
-	ft_readalloc(fd, &next);
-	if (!next)
-		return (NULL);
-	new_line = ft_new_line(next);
-	if (!new_line)
+	cc = (char) c;
+	i = 0;
+	while (s[i])
 	{
-		ft_free(&next, NULL);
-		return (NULL);
+		if (s[i] == cc)
+			return ((char *) &s[i]);
+		i++;
 	}
-	next = ft_next(next, &new_line);
-	return (new_line);
+	if (s[i] == cc)
+		return ((char *) &s[i]);
+	return (NULL);
 }
