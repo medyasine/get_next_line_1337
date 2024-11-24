@@ -12,76 +12,80 @@
 
 #include "get_next_line.h"
 
+char	*ft_strdup(char *s1)
+{
+	char			*dest;
+	unsigned int	i;
+
+	dest = (char *) malloc(ft_strlen(s1) + 1);
+	if (!dest)
+		return (NULL);
+	i = 0;
+	while (s1[i])
+	{
+		dest[i] = s1[i];
+		i++;
+	}
+	dest[i] = 0;
+	return (dest);
+}
+
 size_t	ft_strlen(char *s)
 {
-	size_t	i;
+	int	i;
 
 	i = 0;
-	if (!s)
-		return (0);
 	while (s[i])
 		i++;
 	return (i);
 }
 
-void	*ft_calloc(size_t count, size_t size)
+char	*ft_substr(char *s, unsigned int start, size_t len)
 {
-	size_t	bytes;
 	size_t	i;
-	char	*p;
+	char	*str;
 
+	if (!s)
+		return (NULL);
+	if (start > ft_strlen(s))
+		return (malloc(1));
+	if (len > ft_strlen(s + start))
+		len = ft_strlen(s + start);
+	str = malloc((len + 1) * sizeof(char));
+	if (!str)
+		return (NULL);
 	i = 0;
-	bytes = count * size;
-	if (size && bytes / size != count)
-		return (NULL);
-	p = malloc(bytes);
-	if (!p)
-		return (NULL);
-	while (i < bytes)
+	while (i < len)
 	{
-		*(p + i) = 0;
+		str[i] = s[start + i];
 		i++;
 	}
-	return (p);
+	str[i] = 0;
+	return (str);
 }
 
 char	*ft_strjoin(char *s1, char *s2)
 {
-	char	*str;
-	int		join_len;
-	int		i;
-	int		j;
+	char			*res;
 
-	i = 0;
-	j = 0;
-	if (!*s2)
-		return (s1);
-	join_len = ft_strlen(s1) + ft_strlen(s2);
-	str = ft_calloc((join_len + 1), 1);
-	if (!str)
-	{
-		ft_free(&s1, NULL);
+	res = (char *) malloc((ft_strlen(s1) + ft_strlen(s2) + 1) * sizeof(char));
+	if (!res)
 		return (NULL);
-	}
-	while (s1 && s1[i])
-		str[i++] = s1[j++];
-	ft_free(&s1, NULL);
-	j = 0;
-	while (s2[j])
-		str[i++] = s2[j++];
-	return (str);
+	fill_str(res, s1, s2);
+	return (res);
 }
 
-int	ft_strchr(char *s, int c)
+void	fill_str(char *res, char *s1, char *s2)
 {
-	int	i;
+	unsigned int	i;
+	unsigned int	j;
 
 	i = 0;
-	while (s[i] != '\0')
-	{
-		if (s[i] == (char)c)
-			return (i);
-		i++;
-	}
-	return (-1);
+	j = 0;
+	while (s1[j])
+		res[i++] = s1[j++];
+	j = 0;
+	while (s2[j])
+		res[i++] = s2[j++];
+	res[i] = '\0';
 }
