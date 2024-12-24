@@ -6,103 +6,103 @@
 /*   By: masnus <masnus@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 09:49:04 by masnus            #+#    #+#             */
-/*   Updated: 2024/12/22 10:31:31 by masnus           ###   ########.fr       */
+/*   Updated: 2024/12/24 09:38:01 by masnus           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line_bonus.h"
 
-char	*ft_read_file(int fd, char *dumpstr)
+char	*read_and_append_to_buffer(int fd, char *current_buffer)
 {
 	int		bytes_read;
-	char	*buffer;
+	char	*temp_buffer;
 
-	if (!dumpstr)
-		dumpstr = ft_strdup("");
-	buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
-	if (!buffer)
-		return (free(dumpstr), dumpstr = NULL, NULL);
+	if (!current_buffer)
+		current_buffer = ft_strdup("");
+	temp_buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	if (!temp_buffer)
+		return (free(current_buffer), current_buffer = NULL, NULL);
 	bytes_read = 1;
 	while (bytes_read > 0)
 	{
-		bytes_read = read(fd, buffer, BUFFER_SIZE);
+		bytes_read = read(fd, temp_buffer, BUFFER_SIZE);
 		if (bytes_read == -1)
-			return (free(buffer), buffer = NULL, free(dumpstr), dumpstr = NULL,
+			return (free(temp_buffer), temp_buffer = NULL, free(current_buffer), current_buffer = NULL,
 				NULL);
-		buffer[bytes_read] = '\0';
-		dumpstr = ft_strjoin(dumpstr, buffer);
-		if (!dumpstr)
-			return (free(buffer), buffer = NULL, NULL);
-		if (ft_strchr(dumpstr, '\n'))
+		temp_buffer[bytes_read] = '\0';
+		current_buffer = ft_strjoin(current_buffer, temp_buffer);
+		if (!current_buffer)
+			return (free(temp_buffer), temp_buffer = NULL, NULL);
+		if (ft_strchr(current_buffer, '\n'))
 			break ;
 	}
-	return (free(buffer), buffer = NULL, dumpstr);
+	return (free(temp_buffer), temp_buffer = NULL, current_buffer);
 }
 
-char	*ft_get_line(char *dumpstr)
+char	*extract_next_line(char *current_buffer)
 {
 	char	*line;
 	int		i;
 
 	i = 0;
-	if (!dumpstr || !dumpstr[0])
+	if (!current_buffer || !current_buffer[0])
 		return (NULL);
-	while (dumpstr[i] && dumpstr[i] != '\n')
+	while (current_buffer[i] && current_buffer[i] != '\n')
 		i++;
-	if (dumpstr[i] == '\n')
+	if (current_buffer[i] == '\n')
 		i++;
 	line = malloc(sizeof(char) * (i + 1));
 	if (!line)
 		return (NULL);
 	i = 0;
-	while (dumpstr[i] && dumpstr[i] != '\n')
+	while (current_buffer[i] && current_buffer[i] != '\n')
 	{
-		line[i] = dumpstr[i];
+		line[i] = current_buffer[i];
 		i++;
 	}
-	if (dumpstr[i] == '\n')
+	if (current_buffer[i] == '\n')
 		line[i++] = '\n';
 	line[i] = '\0';
 	return (line);
 }
 
-char	*ft_recycle_dumpstr(char *dumpstr)
+char	*update_remaining_buffer(char *current_buffer)
 {
-	char	*new_dumpstr;
+	char	*new_buffer;
 	int		i;
 	int		j;
 
 	i = 0;
-	while (dumpstr[i] && dumpstr[i] != '\n')
+	while (current_buffer[i] && current_buffer[i] != '\n')
 		i++;
-	if (!dumpstr[i])
-		return (free(dumpstr), dumpstr = NULL, NULL);
+	if (!current_buffer[i])
+		return (free(current_buffer), current_buffer = NULL, NULL);
 	i++;
-	new_dumpstr = malloc(sizeof(char) * (ft_strlen(dumpstr) - i + 1));
-	if (!new_dumpstr)
-		return (free(dumpstr), dumpstr = NULL, NULL);
+	new_buffer = malloc(sizeof(char) * (ft_strlen(current_buffer) - i + 1));
+	if (!new_buffer)
+		return (free(current_buffer), current_buffer = NULL, NULL);
 	j = 0;
-	while (dumpstr[i])
-		new_dumpstr[j++] = dumpstr[i++];
-	new_dumpstr[j] = '\0';
-	return (free(dumpstr), dumpstr = NULL, new_dumpstr);
+	while (current_buffer[i])
+		new_buffer[j++] = current_buffer[i++];
+	new_buffer[j] = '\0';
+	return (free(current_buffer), current_buffer = NULL, new_buffer);
 }
 
 char	*get_next_line(int fd)
 {
-	static char	*dumpstr[OPEN_MAX];
+	static char	*file_buffers[OPEN_MAX];
 	char		*line;
 
 	if (fd < 0)
 		return (NULL);
 	if (BUFFER_SIZE < 1 || read(fd, 0, 0) < 0)
-		return (free(dumpstr[fd]), dumpstr[fd] = NULL, NULL);
-	dumpstr[fd] = ft_read_file(fd, dumpstr[fd]);
-	if (!dumpstr[fd])
-		return (free(dumpstr[fd]), dumpstr[fd] = NULL, NULL);
-	line = ft_get_line(dumpstr[fd]);
+		return (free(file_buffers[fd]), file_buffers[fd] = NULL, NULL);
+	file_buffers[fd] = read_and_append_to_buffer(fd, file_buffers[fd]);
+	if (!file_buffers[fd])
+		return (free(file_buffers[fd]), file_buffers[fd] = NULL, NULL);
+	line = extract_next_line(file_buffers[fd]);
 	if (!line)
-		return (free(dumpstr[fd]), dumpstr[fd] = NULL, NULL);
-	dumpstr[fd] = ft_recycle_dumpstr(dumpstr[fd]);
+		return (free(file_buffers[fd]), file_buffers[fd] = NULL, NULL);
+	file_buffers[fd] = update_remaining_buffer(file_buffers[fd]);
 	return (line);
 }
