@@ -6,101 +6,100 @@
 /*   By: masnus <masnus@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/13 10:42:33 by masnus            #+#    #+#             */
-/*   Updated: 2024/12/21 13:52:42 by masnus           ###   ########.fr       */
+/*   Updated: 2024/12/24 09:36:02 by masnus           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-char	*ft_read_file(int fd, char *dumpstr)
+char	*read_file_to_buffer(int fd, char *existing_data)
 {
 	int		bytes_read;
 	char	*buffer;
 
-	if (!dumpstr)
-		dumpstr = ft_strdup("");
+	if (!existing_data)
+		existing_data = ft_strdup("");
 	buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
 	if (!buffer)
-		return (free(dumpstr), dumpstr = NULL, NULL);
+		return (free(existing_data), existing_data = NULL, NULL);
 	bytes_read = 1;
 	while (bytes_read > 0)
 	{
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
 		if (bytes_read == -1)
-			return (free(buffer), buffer = NULL, free(dumpstr), dumpstr = NULL,
-				NULL);
+			return (free(buffer), buffer = NULL, free(existing_data), existing_data = NULL, NULL);
 		buffer[bytes_read] = '\0';
-		dumpstr = ft_strjoin(dumpstr, buffer);
-		if (!dumpstr)
+		existing_data = ft_strjoin(existing_data, buffer);
+		if (!existing_data)
 			return (free(buffer), buffer = NULL, NULL);
-		if (ft_strchr(dumpstr, '\n'))
+		if (ft_strchr(existing_data, '\n'))
 			break ;
 	}
-	return (free(buffer), buffer = NULL, dumpstr);
+	return (free(buffer), buffer = NULL, existing_data);
 }
 
-char	*ft_get_line(char *dumpstr)
+char	*extract_line_from_buffer(char *buffered_data)
 {
 	char	*line;
 	int		i;
 
 	i = 0;
-	if (!dumpstr || !dumpstr[0])
+	if (!buffered_data || !buffered_data[0])
 		return (NULL);
-	while (dumpstr[i] && dumpstr[i] != '\n')
+	while (buffered_data[i] && buffered_data[i] != '\n')
 		i++;
-	if (dumpstr[i] == '\n')
+	if (buffered_data[i] == '\n')
 		i++;
 	line = malloc(sizeof(char) * (i + 1));
 	if (!line)
 		return (NULL);
 	i = 0;
-	while (dumpstr[i] && dumpstr[i] != '\n')
+	while (buffered_data[i] && buffered_data[i] != '\n')
 	{
-		line[i] = dumpstr[i];
+		line[i] = buffered_data[i];
 		i++;
 	}
-	if (dumpstr[i] == '\n')
+	if (buffered_data[i] == '\n')
 		line[i++] = '\n';
 	line[i] = '\0';
 	return (line);
 }
 
-char	*ft_recycle_dumpstr(char *dumpstr)
+char	*remove_extracted_line(char *buffered_data)
 {
-	char	*new_dumpstr;
+	char	*remaining_data;
 	int		i;
 	int		j;
 
 	i = 0;
-	while (dumpstr[i] && dumpstr[i] != '\n')
+	while (buffered_data[i] && buffered_data[i] != '\n')
 		i++;
-	if (!dumpstr[i])
-		return (free(dumpstr), dumpstr = NULL, NULL);
+	if (!buffered_data[i])
+		return (free(buffered_data), buffered_data = NULL, NULL);
 	i++;
-	new_dumpstr = malloc(sizeof(char) * (ft_strlen(dumpstr) - i + 1));
-	if (!new_dumpstr)
-		return (free(dumpstr), dumpstr = NULL, NULL);
+	remaining_data = malloc(sizeof(char) * (ft_strlen(buffered_data) - i + 1));
+	if (!remaining_data)
+		return (free(buffered_data), buffered_data = NULL, NULL);
 	j = 0;
-	while (dumpstr[i])
-		new_dumpstr[j++] = dumpstr[i++];
-	new_dumpstr[j] = '\0';
-	return (free(dumpstr), dumpstr = NULL, new_dumpstr);
+	while (buffered_data[i])
+		remaining_data[j++] = buffered_data[i++];
+	remaining_data[j] = '\0';
+	return (free(buffered_data), buffered_data = NULL, remaining_data);
 }
 
 char	*get_next_line(int fd)
 {
-	static char	*dumpstr;
+	static char	*buffered_data;
 	char		*line;
 
 	if (fd < 0 || BUFFER_SIZE < 1 || read(fd, 0, 0) < 0)
-		return (free(dumpstr), dumpstr = NULL, NULL);
-	dumpstr = ft_read_file(fd, dumpstr);
-	if (!dumpstr)
-		return (free(dumpstr), dumpstr = NULL, NULL);
-	line = ft_get_line(dumpstr);
+		return (free(buffered_data), buffered_data = NULL, NULL);
+	buffered_data = read_file_to_buffer(fd, buffered_data);
+	if (!buffered_data)
+		return (free(buffered_data), buffered_data = NULL, NULL);
+	line = extract_line_from_buffer(buffered_data);
 	if (!line)
-		return (free(dumpstr), dumpstr = NULL, NULL);
-	dumpstr = ft_recycle_dumpstr(dumpstr);
+		return (free(buffered_data), buffered_data = NULL, NULL);
+	buffered_data = remove_extracted_line(buffered_data);
 	return (line);
 }
