@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: masnus <masnus@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/13 10:42:33 by masnus            #+#    #+#             */
-/*   Updated: 2024/12/21 13:52:42 by masnus           ###   ########.fr       */
+/*   Created: 2024/12/21 09:49:04 by masnus            #+#    #+#             */
+/*   Updated: 2024/12/22 10:31:31 by masnus           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line.h"
+#include "get_next_line_bonus.h"
 
 char	*ft_read_file(int fd, char *dumpstr)
 {
@@ -90,17 +90,19 @@ char	*ft_recycle_dumpstr(char *dumpstr)
 
 char	*get_next_line(int fd)
 {
-	static char	*dumpstr;
+	static char	*dumpstr[OPEN_MAX];
 	char		*line;
 
-	if (fd < 0 || BUFFER_SIZE < 1 || read(fd, 0, 0) < 0)
-		return (free(dumpstr), dumpstr = NULL, NULL);
-	dumpstr = ft_read_file(fd, dumpstr);
-	if (!dumpstr)
-		return (free(dumpstr), dumpstr = NULL, NULL);
-	line = ft_get_line(dumpstr);
+	if (fd < 0)
+		return (NULL);
+	if (BUFFER_SIZE < 1 || read(fd, 0, 0) < 0)
+		return (free(dumpstr[fd]), dumpstr[fd] = NULL, NULL);
+	dumpstr[fd] = ft_read_file(fd, dumpstr[fd]);
+	if (!dumpstr[fd])
+		return (free(dumpstr[fd]), dumpstr[fd] = NULL, NULL);
+	line = ft_get_line(dumpstr[fd]);
 	if (!line)
-		return (free(dumpstr), dumpstr = NULL, NULL);
-	dumpstr = ft_recycle_dumpstr(dumpstr);
+		return (free(dumpstr[fd]), dumpstr[fd] = NULL, NULL);
+	dumpstr[fd] = ft_recycle_dumpstr(dumpstr[fd]);
 	return (line);
 }
